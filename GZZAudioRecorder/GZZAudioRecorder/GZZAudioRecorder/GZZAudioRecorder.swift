@@ -25,8 +25,6 @@ public class GZZAudioRecorder: GZZBaseAlertView {
     private var audioPlayer: AVAudioPlayer? // 播放对象
     
     private var timer: Timer? // 时间计时器
-    private let timerInterval = 0.1 // 计时间隔
-    
     private var decibelLink: CADisplayLink? // 分贝计时器
     private var showDecibels = [Float]() // 显示的分贝值
     private var recordDecibels = [Float]() // 录音分贝值
@@ -233,11 +231,11 @@ public class GZZAudioRecorder: GZZBaseAlertView {
         let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMddHHmmss"
-        let recordURL = documentDirectory.appendingPathComponent(dateFormatter.string(from: Date()) + ".pcm")
+        let recordURL = documentDirectory.appendingPathComponent(dateFormatter.string(from: Date()) + ".wav")
         // 定义音频的编码参数
         let recordSettings = [
             AVSampleRateKey : NSNumber(value: 44100.0), // 声音采样率
-            AVFormatIDKey : NSNumber(value: kAudioFormatAppleLossless), // 编码格式
+            AVFormatIDKey : NSNumber(value: kAudioFormatLinearPCM), // 编码格式
             AVNumberOfChannelsKey : NSNumber(value: 2), // 采集音轨
             AVEncoderAudioQualityKey : NSNumber(value: AVAudioQuality.high.rawValue) // 音频质量
         ]
@@ -256,6 +254,9 @@ public class GZZAudioRecorder: GZZBaseAlertView {
         audioRecorder?.stop() // 结束录音
         stopTiming() // 结束计时
         recordDecibels = showDecibels
+        if let url = audioRecorder?.url {
+            recordTime = AVURLAsset(url: url).duration.seconds // 设置准确的录音时间
+        }
     }
     
     /// 开始播放声音
@@ -311,7 +312,7 @@ public class GZZAudioRecorder: GZZBaseAlertView {
             decibelLink?.frameInterval = 5
         }
         decibelLink?.add(to: RunLoop.current, forMode: .commonModes)
-        timer = Timer.scheduledTimer(timeInterval: timerInterval, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
     }
     
     /// 结束计时
@@ -360,9 +361,9 @@ public class GZZAudioRecorder: GZZBaseAlertView {
     /// 刷新录音和播放时间
     @objc private func updateTime() {
         if buttonStatus == .stopRecord {
-            recordTime += timerInterval
+            recordTime += 1.0
         } else if buttonStatus == .stopPlay {
-            playTime += timerInterval
+            playTime += 1.0
         }
     }
     
